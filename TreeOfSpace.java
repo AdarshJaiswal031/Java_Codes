@@ -36,8 +36,7 @@ public class TreeOfSpace {
         if (node.isLocked || node.des_locked == 0)
             return false;
         if (isUpgradePossible(node, uid)) {
-            node.uid = uid;
-            node.isLocked = true;
+            lock(node, uid);
             return true;
         }
         return false;
