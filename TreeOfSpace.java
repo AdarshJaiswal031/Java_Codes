@@ -25,6 +25,7 @@ public class TreeOfSpace {
     private static boolean unlock(Node node, int uid) {
         if (!node.isLocked || node.uid != uid)
             return false;
+
         node.isLocked = false;
         node.uid = -1;
         updateChild(node, -1);
@@ -33,31 +34,17 @@ public class TreeOfSpace {
     }
 
     private static boolean upgrade(Node node, int uid) {
-        if (node.isLocked || node.des_locked == 0)
+        if (node.isLocked || node.ans_locked != 0 || node.des_locked == 0)
             return false;
-        if (isUpgradePossible(node, uid)) {
-            lock(node, uid);
-            return true;
+
+        List<Node> lockedNodes = new ArrayList<>();
+        if (verifyDescendants(node, uid, lockedNodes)) {
+            for (Node lockedNode : lockedNodes) {
+                unlock(lockedNode, uid);
+            }
+            return lock(node, uid);
         }
         return false;
-    }
-
-    private static boolean isUpgradePossible(Node node, int uid) {
-        if (node == null)
-            return true;
-        if (node.isLocked && node.uid != uid)
-            return false;
-        for (Node child : node.children) {
-            if (!isUpgradePossible(child, uid)) {
-                return false;
-            }
-        }
-        for (Node child : node.children) {
-            if (child.isLocked && child.uid == uid) {
-                unlock(child, uid);
-            }
-        }
-        return true;
     }
 
     private static void updateParent(Node node, int val) {
@@ -77,7 +64,22 @@ public class TreeOfSpace {
         }
     }
 
-    // Function to print the tree level-wise
+    public static boolean verifyDescendants(Node node, int uid, List<Node> lockedNodes) {
+        if (node.isLocked) {
+            if (node.uid != uid)
+                return false;
+            lockedNodes.add(node);
+        }
+        if (node.des_locked == 0)
+            return true;
+
+        for (Node child : node.children) {
+            if (!verifyDescendants(child, uid, lockedNodes))
+                return false;
+        }
+        return true;
+    }
+
     public static void printTreeLevelWise(Node root) {
         if (root == null)
             return;
@@ -86,20 +88,18 @@ public class TreeOfSpace {
         queue.add(root);
 
         while (!queue.isEmpty()) {
-            int levelSize = queue.size(); // Number of nodes at the current level
-
+            int levelSize = queue.size();
             for (int i = 0; i < levelSize; i++) {
                 Node current = queue.poll();
-                System.out.print(current.name + " "); // Print the name of the current node
+                System.out.print(current.name + " ");
                 if (current.parent != null) {
-                    System.out.println(current.parent.name);
+                    System.out.println("Parent: " + current.parent.name);
                 }
                 for (Node child : current.children) {
                     queue.add(child);
                 }
             }
-
-            System.out.println(); // Move to the next line after printing the current level
+            System.out.println();
         }
     }
 
@@ -110,8 +110,8 @@ public class TreeOfSpace {
         int n = sc.nextInt();
         int k = sc.nextInt();
         int nq = sc.nextInt();
-        sc.nextLine(); // To handle the newline character after integers
-        String nodeAr[] = new String[n];
+        sc.nextLine();
+        String[] nodeAr = new String[n];
         for (int i = 0; i < n; i++) {
             nodeAr[i] = sc.nextLine();
         }
